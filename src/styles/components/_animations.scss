@@ -1,0 +1,36 @@
+@keyframes scale {
+	from {
+		transform: scale(0);
+	}
+
+	to {
+		transform: scale(1);
+	}
+}
+
+@keyframes open-notification {
+	from {
+		transform: translateX(100%);
+	}
+
+	to {
+		transform: translateX(0px);
+	}
+}
+
+@keyframes close-notification {
+	from {
+		transform: translateX(0px);
+	}
+
+	to {
+		transform: translateX(100%);
+	}
+}
+
+@keyframes spinner-border {
+    to {
+        -webkit-transform: rotate(360deg);
+        transform: rotate(360deg);
+    }
+}

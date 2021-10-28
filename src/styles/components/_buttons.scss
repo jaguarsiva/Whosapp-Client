@@ -1,0 +1,33 @@
+
+@use '../abstracts' as *;
+
+.btn {
+    cursor: pointer;
+    position: relative;
+}
+
+.fancy-btn {
+    isolation: isolate;
+    overflow: hidden;
+
+    &::after {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        height: 100%;
+        width: 100%;
+        background: $black;
+        border-radius: inherit;
+        z-index: -1;
+        transform-origin: left;
+        transform: scaleX(0);
+        transition: transform 0.125s linear;
+    }
+
+    &:hover::after,
+    &:active::after,
+    &:focus::after {
+        transform: scaleX(1);
+    }
+}
