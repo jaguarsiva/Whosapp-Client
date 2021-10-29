@@ -76,26 +76,18 @@ import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
 import UsersList from '@/components/Sidepane/UsersList.vue';
 import notificationType from "@/types/notificationType";
+import useDropdown from '@/composables/useDropdown';
 
 export default defineComponent({
 	components: {
 		UsersList
 	},
 	setup() {
-		const isDropdownOpen = ref<boolean>(false);
 		const isUserListActive = ref<boolean>(false);
 		const store = useStore();
 		const router = useRouter();
 		const user = computed( () => store.state.user.user );
-
-		function setIsOpenFalsy() {
-			isDropdownOpen.value = false;
-		};
-
-		function toggleDropdown() {
-			isDropdownOpen.value = !isDropdownOpen.value;
-			if( isDropdownOpen.value ) document.body.addEventListener( 'click', setIsOpenFalsy, { once: true });
-		};
+		const { isDropdownOpen, toggleDropdown, setIsOpenFalsy } = useDropdown();
 
 		function logout() {
 			document.body.removeEventListener( 'click', setIsOpenFalsy );
@@ -114,8 +106,8 @@ export default defineComponent({
 
 		return {
 			isDropdownOpen,
-			isUserListActive,
 			toggleDropdown,
+			isUserListActive,
 			logout,
 			closeUsersList,
 			user

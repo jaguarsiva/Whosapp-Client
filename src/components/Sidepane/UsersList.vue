@@ -1,7 +1,7 @@
 <template>
 	<aside class="users__pane" :class="{ is__active: isUserListActive }">
 		<div class="top__row flex">
-			<button class="btn back__btn" @click="handleClick">
+			<button class="btn back__btn" @click="closeUsersPane">
 				<svg
 					xmlns="http://www.w3.org/2000/svg"
 					width="24"
@@ -16,23 +16,26 @@
 			</button>
 			<span> New Chat </span>
 		</div>
-		<SearchBox placeholder="Search contacts" />
+		<SearchBox
+			placeholder="Search contacts"
+			:value="searchKey"
+			@search-change="handleSearch"
+		/>
 		<div class="users__list">
 			<ul>
 				<li
-					v-for="(user, index) in users"
+					v-for="(user, index) in finalList"
 					:key="index"
 				>
-					<router-link
-						:to="{ name: 'ChatRoom', params: { id: user.urlPath } }"
+					<button
 						class="user__box flex align-center"
-						@click="handleClick"
+						@click="openUserChat(user.email)"
 					>
 						<div class="user__avatar"></div>
 						<div class="user__contents flex-col justify-center">
 							<span class="user__name"> {{ user.email }} </span>
 						</div>
-					</router-link>
+					</button>
 				</li>
 			</ul>
 		</div>
@@ -44,6 +47,8 @@ import { computed, defineComponent, onMounted, ref } from 'vue';
 import { getDatabase, ref as firebaseRef, onValue } from 'firebase/database';
 import SearchBox from '@/components/Sidepane/SearchBox.vue';
 import { useStore } from 'vuex';
+import useSearch from '@/composables/useSearch';
+import userType from '@/types/userType';
 
 export default defineComponent({
 	components: {
@@ -56,16 +61,21 @@ export default defineComponent({
 		}
 	},
 	setup(props, context) {
-		type usersType = {
-			email: string,
-			urlPath: string
-		};
-		const users = ref<usersType[]>([]);
+
+		const users = ref<userType[]>([]);
+
 		const store = useStore();
 		const loggedUser = computed( () => store.state.user.user );
+        const { searchKey, handleSearch, finalList } = useSearch( users );
 
-		function handleClick() {
+		function openUserChat( user: string ) {
+            store.dispatch('user/setChat', user);
+			closeUsersPane();
+		}
+
+		function closeUsersPane() {
 			context.emit('close-pane');
+			searchKey.value = '';
 		}
 
 		onMounted( () => {
@@ -74,23 +84,20 @@ export default defineComponent({
 			onValue( usersRef, snapshot => {
 				if( snapshot.exists() ) {
 					const data = snapshot.val();
-					type userType = { email: string; };
 					const result: userType[] = Object.values( data );
 					users.value = result
-						.map( user => {
-							return {
-								email: user.email,
-								urlPath: user.email.split('.').join('dot')
-							}
-						})
+						.map( user => ({ email: user.email}) )
 						.filter( user => user.email !== loggedUser.value );
 				}
 			});
 		});
 
 		return {
-			handleClick,
-            users
+			openUserChat,
+			closeUsersPane,
+			handleSearch,
+            finalList,
+			searchKey
 		};
 	}
 });
@@ -142,6 +149,7 @@ export default defineComponent({
     cursor: pointer;
     position: relative;
     isolation: isolate;
+	width: 100%;
 
     &:hover {
         background-color: $grey;
@@ -171,6 +179,7 @@ export default defineComponent({
     white-space: nowrap;
     font-size: rem(16);
     font-weight: 400;
+	text-align: left;
 }
 
 .user__number {

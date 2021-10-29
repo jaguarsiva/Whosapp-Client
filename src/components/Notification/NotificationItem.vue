@@ -48,7 +48,7 @@ export default defineComponent({
 				setTimeout(() => {
 					store.dispatch( 'notification/remove', props.notification.id );
 				}, 400);
-			}, 5000);
+			}, 4000);
 		});
 
 		onBeforeUnmount(() => {

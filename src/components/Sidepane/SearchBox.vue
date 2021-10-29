@@ -41,13 +41,21 @@ export default defineComponent({
 		placeholder: {
 			type: String,
 			required: true
+		},
+		value: {
+			type: String,
+			required: true
 		}
 	},
 	setup(props, context) {
-		const searchInput = ref<string>('');
+		const searchInput = ref<string>( props.value );
 		watch( searchInput, debounce( (value: string) => {
 			context.emit('search-change', value);
 		}, 500));
+
+		watch( () => props.value, () => {
+			searchInput.value = props.value;
+		});
 
 		return {
 			searchInput

@@ -18,16 +18,12 @@
 				</a>
 			</p>
 		</div>
-		<SearchBox
-			placeholder="Search or start a new chat"
-		/>
 		<ChatsList />
 	</section>
 </template>
 
 <script lang="ts">
 import ToolsBox from '@/components/Sidepane/ToolsBox.vue';
-import SearchBox from '@/components/Sidepane/SearchBox.vue';
 import ChatsList from '@/components/Sidepane/ChatsList.vue';
 
 import { defineComponent } from 'vue';
@@ -35,7 +31,6 @@ import { defineComponent } from 'vue';
 export default defineComponent({
 	components: {
         ToolsBox,
-		SearchBox,
 		ChatsList
 	},
 	setup() {}

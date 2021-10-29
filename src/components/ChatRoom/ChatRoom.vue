@@ -38,7 +38,7 @@
 			</svg>
 		</div>
         <h2 class="chat__name">
-            {{ roomID.split('@')[0] }}
+            {{ receiverEmail }}
         </h2>
 		<div class="dropdown__outer" @click.stop>
 			<button class="btn options__btn flex-center" @click="toggleDropdown">
@@ -50,31 +50,29 @@
 				</svg>
 			</button>
 			<div class="dropdown__box flex-col" v-if="isDropdownOpen">
-				<button class="btn">
+				<button
+					class="btn flex align-center"
+					@click="deleteChat"
+				>
 					Delete chat
 				</button>
 			</div>
 		</div>
 	</div>
-	<div class="chat__body">
+	<div class="chat__body" ref="chatBody">
 		<div class="chat__bg"></div>
 		<div class="chat__contents">
-			<div class="message__row flex align-center" v-for="(message, index) in messages" :key="index">
-				<span
-					class="message__text"
-					:class="{ 'sender__message': message.isSender, 'receiver__message': !message.isSender }">
-					{{ message.text  }}
-					<span class="message__time">
-						{{ message.time }}
-					</span>
-				</span>
-			</div>
+			<Message
+				v-for="(message, index) in messages"
+				:key="index"
+				:message="message"
+			/>
 		</div>
 	</div>
 	<div class="chat__bottom">
 		<form class="flex align-center" @submit.prevent="sendMessage">
 			<input type="text" placeholder="Type a message" v-model="inputMessage" />
-			<button type="sumbit" class="send__btn flex-center">
+			<button type="submit" class="send__btn flex-center">
 				<svg viewBox="0 0 24 24" width="24" height="24" class="">
 					<path
 						fill="currentColor"
@@ -87,111 +85,125 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import { computed, defineComponent, onMounted, onBeforeUnmount, ref, watch } from 'vue';
 import { useStore } from 'vuex';
 import { v4 } from 'uuid';
-import { getDatabase, ref as firebaseRef, set, onValue } from 'firebase/database';
-import messageType from '@/types/messageType';
+import { getDatabase, ref as firebaseRef, set, onValue, off, remove } from 'firebase/database';
+import Message from '@/components/ChatRoom/Message.vue';
+import useDropdown from '@/composables/useDropdown';
 import { getCurrentTime } from '@/helpers/getCurrentTime';
+import { dbMessageType, uiMessageType } from '@/types/messageType';
+import notificationType from "@/types/notificationType";
 
 export default defineComponent({
+	components: {
+		Message
+	},
 	setup() {
-		type msgType = {
-			isSender: boolean,
-			text: string,
-			time: string
-		};
-
-		const messages = ref<msgType[]>([]);
-		const isDropdownOpen = ref<boolean>(false);
-		const inputMessage = ref<string>('');
 		const store = useStore();
-		const user = computed( () => store.state.user.user );
-		const route = useRoute();
-		const roomID = computed( () => route.params.id.toString() );
-		let unsub: Function;
-		const db = getDatabase();
-		const receiverEmail = computed( () => {
-			const emailFields = roomID.value.split('@');
-			return emailFields[0] + '@' + emailFields[1].split('dot').join('.');
-		});
-		const collectionName = computed( () => {
-			const sender = user.value.split('.')[0].split('@').join('');
+		const { isDropdownOpen, toggleDropdown, setIsOpenFalsy } = useDropdown();
+		const messages = ref<uiMessageType[]>([]);
+		const inputMessage = ref<string>('');
+		const chatBody = ref<HTMLDivElement | null>(null);
+
+		const userEmail = computed( () => store.state.user.user );
+		const receiverEmail = computed( () => store.state.user.chat );
+
+		const database = getDatabase();
+		const chatRoomName = computed( () => {
+			if( !receiverEmail.value || !userEmail.value ) return "";
+			const sender = userEmail.value.split('.')[0].split('@').join('');
 			const receiver = receiverEmail.value.split('.')[0].split('@').join('');
-			return [ sender, receiver ].sort().join('-');
+			return "chats/" + [ sender, receiver ].sort().join('-');
 		});
+		let oldChatName = '';
 
-		async function sendMessage() {
-
+		function sendMessage() {
 			if( inputMessage.value === '' ) return;
 
-			const database = getDatabase();
-			const messageRef = firebaseRef( database, "chats/" + collectionName.value + '/' + v4() );
-
-			const message: messageType = {
-				sender: user.value,
+			const messageRef = firebaseRef( database, chatRoomName.value + '/' + v4()  );
+			const message: dbMessageType = {
+				sender: userEmail.value,
 				receiver: receiverEmail.value,
 				text: inputMessage.value,
-				time: new Date().toUTCString()
+				time: new Date().toISOString()
 			};
 			set( messageRef, message );
 			inputMessage.value = '';
 		}
 
-		function setIsOpenFalsy() {
-			isDropdownOpen.value = false;
-		};
-
-		function toggleDropdown() {
-			isDropdownOpen.value = !isDropdownOpen.value;
-			if( isDropdownOpen.value ) document.body.addEventListener( 'click', setIsOpenFalsy, { once: true });
-		};
-
 		onMounted( () => {
-			const starCountRef = firebaseRef( db, "chats/" + collectionName.value );
-			unsub = onValue( starCountRef, listenValueChange );
+			const chatRef = firebaseRef( database, chatRoomName.value );
+			onValue( chatRef, listenValueChange );
 		});
 
-		onUnmounted( () => {
-			unsub();
+		onBeforeUnmount( () => {
+			const chatRef = firebaseRef( database, oldChatName );
+			off( chatRef );
 		});
 
-		watch( roomID, () => {
-			unsub();
-			const starCountRef = firebaseRef( db, "chats/" + collectionName.value );
-			unsub = onValue( starCountRef, listenValueChange );
+		watch( chatRoomName, ( newValue: string, oldValue: string ) => {
+
+			if( !newValue ) {
+				oldChatName = oldValue;
+				return
+			};
+			let chatRef = firebaseRef( database, oldValue );
+			off( chatRef );
+			chatRef = firebaseRef( database, newValue );
+			onValue( chatRef, listenValueChange );
 		});
 
 		function listenValueChange( snapshot ) {
 			if( snapshot.exists() ) {
 				const data = snapshot.val();
-				let result: messageType[] = Object.values( data );
-				result = result.sort( (a: messageType, b: messageType) => {
+				let result: dbMessageType[] = Object.values( data );
+				result = result.sort( (a: dbMessageType, b: dbMessageType) => {
 					const aDate = new Date( a.time );
 					const bDate = new Date( b.time );
 					if( aDate < bDate ) return -1;
 					else if( bDate < aDate ) return 1;
 					else return 0;
 				});
-				messages.value = result.map( (message: messageType) => {
+				messages.value = result.map( (message: dbMessageType) => {
 					return {
-						isSender: message.sender === user.value,
+						isSender: message.sender === userEmail.value,
 						text: message.text,
 						time: getCurrentTime( new Date(message.time) )
 					}
 				});
 			}
-			else
-				messages.value = [];
+			else messages.value = [];
+			setTimeout( () => {
+				const lastMsg = chatBody.value!.querySelector('.message__row:last-child');
+				if( lastMsg ) lastMsg!.scrollIntoView();
+			}, 0);
+		}
+
+		function deleteChat() {
+			const chatRef = firebaseRef( database, chatRoomName.value );
+			off( chatRef );
+			remove( chatRef );
+			isDropdownOpen.value = false;
+			document.body.removeEventListener( 'click', setIsOpenFalsy );
+			const notification: notificationType = {
+				type: 'success',
+				message: 'Chat deleted successfully.'
+			};
+			store.dispatch('notification/add', notification );
+			messages.value = [];
+			store.dispatch( 'user/setChat', null );
 		}
 
 		return {
-			messages, inputMessage,
-			sendMessage,
+			messages,
+			inputMessage,
 			isDropdownOpen,
+			receiverEmail,
 			toggleDropdown,
-			roomID
+			sendMessage,
+			deleteChat,
+			chatBody
 		};
 	}
 });
@@ -215,7 +227,6 @@ export default defineComponent({
     font-size: rem(16);
     font-weight: 500;
     margin-left: 12px;
-	text-transform: capitalize;
 }
 
 .dropdown__outer {
@@ -273,63 +284,6 @@ export default defineComponent({
 		overflow-y: overlay;
 		z-index: 1;
 	}
-}
-
-.message__row {
-	margin-bottom: 18px;
-	padding: 0 75px;
-	min-height: 35px;
-}
-
-.message__text {
-	padding: 6px 65px 8px 12px;
-	position: relative;
-	font-size: rem(14);
-	line-height: 1.5;
-	max-width: 350px;
-	color: rgba(241, 241, 242, 0.95);
-
-	&::before {
-		content: '';
-		position: absolute;
-		width: 0;
-		height: 0;
-		top: 0;
-		right: -12px;
-	}
-}
-
-.sender__message {
-	background-color: rgb(5, 97, 98);
-	margin-left: auto;
-	border-radius: 6px 0 6px 6px;
-
-	&::before {
-		border-bottom: 12px solid transparent;
-		border-left: 12px solid rgb(5, 97, 98);
-		border-top-right-radius: 5px;
-		right: -8px;
-	}
-}
-
-.receiver__message {
-	background-color: rgb(38, 45, 49);
-	border-radius: 0 6px 6px 6px;
-
-	&::before {
-		left: -8px;
-		border-bottom: 12px solid transparent;
-		border-right: 12px solid rgb(38, 45, 49);
-		border-top-left-radius: 5px;
-	}
-}
-
-.message__time {
-	position: absolute;
-	right: 9px;
-	bottom: 2px;
-	font-size: rem(11);
-	color: rgba(241, 241, 242, 0.63);
 }
 
 .chat__bottom {

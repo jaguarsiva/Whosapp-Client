@@ -1,26 +1,32 @@
 <template>
+    <SearchBox
+        placeholder="Search or start a new chat"
+        :value="searchKey"
+        @search-change="handleSearch"
+    />
     <div class="chats__list">
         <ul>
             <li
-                v-for="(chat, index) in chats"
+                v-for="(chat, index) in finalList"
                 :key="index"
             >
-                <router-link
-                    :to="{ name: 'ChatRoom', params: { id: chat.urlPath } }"
+                <button
+                    @click="openUserChat( chat.email )"
                     class="chat__box flex align-center"
+                    :class="{ is__active: activeChat === chat.email }"
                 >
                     <div class="chat__avatar"></div>
                     <div class="chat__contents">
-                        <span class="chat__title"> {{ chat.title }} </span>
-                        <span class="chat__time"> {{ chat.time }} </span>
+                        <span class="chat__title"> {{ chat.email }} </span>
+                        <span class="chat__time"> {{ chat.lastMessageTime }} </span>
                         <span class="chat__msg flex align-center">
-                            {{ chat.message }}
+                            {{ chat.lastMessage }}
                         </span>
                     </div>
                     <svg class="chat__arrow" viewBox="0 0 19 20" width="19" height="20">
                         <path fill="currentColor" d="M3.8 6.7l5.7 5.7 5.7-5.7 1.6 1.6-7.3 7.2-7.3-7.2 1.6-1.6z"></path>
                     </svg>
-                </router-link>
+                </button>
             </li>
             <li v-if="chats.length === 0" class="no__chats flex align-center">
                 No Chats Found..
@@ -30,52 +36,84 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, onMounted, computed, ref } from 'vue';
+import { defineComponent, onMounted, computed, ref, onUnmounted } from 'vue';
 import { useStore } from 'vuex';
-import { getDatabase, ref as firebaseRef, onValue } from 'firebase/database';
-import messageType from '@/types/messageType';
+import { dbMessageType } from '@/types/messageType';
+import chatType from '@/types/chatType';
 import { getCurrentTime } from '@/helpers/getCurrentTime';
+import { getDatabase, ref as firebaseRef, onValue, off } from 'firebase/database';
+import SearchBox from '@/components/Sidepane/SearchBox.vue';
+import useSearch from '@/composables/useSearch';
 
 export default defineComponent({
+    components: {
+        SearchBox
+    },
     setup() {
-        type chatType = {
-            title: string,
-            message: string,
-            time: string,
-            urlPath: string
-        };
         const chats = ref<chatType[]>([]);
 		const store = useStore();
+        const db = getDatabase();
 		const loggedUser = computed( () => store.state.user.user );
+        const activeChat = computed( () => store.state.user.chat );
+        const { searchKey, handleSearch, finalList } = useSearch( chats );
+
+		function openUserChat( user: string ) {
+            store.dispatch('user/setChat', user);
+			searchKey.value = '';
+		}
 
         onMounted( () => {
-			const db = getDatabase();
 			const chatsRef = firebaseRef( db, "chats" );
 			onValue( chatsRef, snapshot => {
 				if( snapshot.exists() ) {
 					const data = snapshot.val();
                     const rooms: [string, object][] = Object.entries( data );
                     const chatRooms = rooms.filter( room => {
-                        const roomChat: messageType = Object.values( room[1] )[0];
+                        const roomChat: dbMessageType = Object.values( room[1] )[0];
                         return roomChat.sender === loggedUser.value || roomChat.receiver === loggedUser.value;
                     });
-                    chats.value = chatRooms.map( room => {
-                        const roomChats: messageType[] = Object.values( room[1] );
-                        const roomChat: messageType = roomChats[ roomChats.length - 1 ];
-                        const title = roomChat.sender === loggedUser.value ? roomChat.receiver : roomChat.sender;
+                    const results = chatRooms.map( room => {
+                        const roomChats: dbMessageType[] = Object.values( room[1] );
+                        const roomChat: dbMessageType = roomChats.reduce( (result, chat) => {
+                            const resultTime = new Date( result.time );
+					        const chatTime = new Date( chat.time );
+                            return resultTime < chatTime ? chat : result;
+                        }, roomChats[0] );
+                        const email = roomChat.sender === loggedUser.value ? roomChat.receiver : roomChat.sender;
                         return {
-                            title,
-                            message: roomChat.text,
-                            time: getCurrentTime( new Date( roomChat.time ) ),
-                            urlPath: title.split('.').join('dot')
+                            email,
+                            lastMessage: roomChat.text,
+                            lastMessageTime: roomChat.time,
                         };
                     });
+                    chats.value = results.sort( (a: chatType, b: chatType) => {
+                        const aDate = new Date( a.lastMessageTime );
+                        const bDate = new Date( b.lastMessageTime );
+                        if( aDate < bDate ) return 1;
+                        else if( bDate < aDate ) return -1;
+                        else return 0;
+                    }).map( chat => ({
+                            ...chat,
+                            lastMessageTime: getCurrentTime( new Date( chat.lastMessageTime ) )
+                        })
+                    );
 				}
+                else chats.value = [];
 			});
         });
 
+        onUnmounted( () => {
+			const chatsRef = firebaseRef( db, "chats" );
+            off( chatsRef );
+        });
+
         return {
-            chats
+            chats,
+            activeChat,
+            searchKey,
+            handleSearch,
+            openUserChat,
+            finalList
         };
     }
 })
@@ -90,6 +128,7 @@ export default defineComponent({
 }
 
 .chat__box {
+    width: 100%;
     height: 70px;
     cursor: pointer;
     position: relative;
@@ -111,11 +150,11 @@ export default defineComponent({
         }
     }
 
-    &.router-link-active {
+    &.is__active {
         background-color: $grey;
 
         .chat__contents {
-            border-bottom-width: 0;
+            border-bottom-color: transparent;
         }
     }
 }
@@ -155,6 +194,7 @@ export default defineComponent({
     white-space: nowrap;
     font-size: rem(16);
     font-weight: 400;
+    text-align: left;
 }
 
 .chat__time {

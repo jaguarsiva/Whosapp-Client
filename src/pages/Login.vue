@@ -119,7 +119,7 @@
 				</div>
 				<div class="qr__code">
 					<img
-						src="@/assets/images/QR Code Whosapp.jpg"
+						src="@/assets/images/qrcode.jpg"
 						alt="QR Code Whosapp"
 					/>
 				</div>

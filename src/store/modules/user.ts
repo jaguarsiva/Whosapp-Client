@@ -5,7 +5,8 @@ export default {
     namespaced: true,
     state: {
         user: null as string | null,
-        isLoggedIn: false as boolean
+        isLoggedIn: false,
+        chat: null as string | null
     },
     mutations: {
         SET_USER( state, user: string | null ) {
@@ -13,6 +14,9 @@ export default {
         },
         SET_ISLOGGEDIN( state, isLoggedIn: boolean ) {
             state.isLoggedIn = isLoggedIn;
+        },
+        SET_CHAT( state, chat: string | null ) {
+            state.chat = chat;
         }
     },
     actions: {
@@ -25,9 +29,9 @@ export default {
             commit( 'SET_USER', null );
             commit( 'SET_ISLOGGEDIN', false );
             signoutFirebase();
+        },
+        setChat({ commit }, chat: string | null) {
+            commit( 'SET_CHAT', chat );
         }
-    },
-    getters: {
-
     }
 };

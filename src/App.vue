@@ -2,7 +2,7 @@
 	<main class="flex" :class="{ 'is__logged': isLoggedIn }">
 		<SidePane v-if="isLoggedIn" />
 		<section class="body__pane">
-			<router-view></router-view>
+			<router-view />
 		</section>
 	</main>
 	<NotificationList />
