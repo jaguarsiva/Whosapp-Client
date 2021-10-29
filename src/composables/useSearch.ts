@@ -1,14 +1,11 @@
 
 import { ref, watch, computed, Ref } from 'vue';
-import userType from '@/types/userType';
-import chatType from '@/types/chatType';
-type userOrChatArray = userType[] | chatType[];
 
-export default function( list: Ref<userOrChatArray> ) {
+export default function( list ) {
 
     const searchKey = ref('');
-    const searchResults = ref<userOrChatArray>([]);
-    const finalList = computed<userOrChatArray>( () => {
+    const searchResults = ref([]);
+    const finalList = computed( () => {
         if( searchResults.value.length ) return searchResults.value;
         else return list.value;
     });
