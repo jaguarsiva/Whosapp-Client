@@ -192,4 +192,15 @@ export default defineComponent({
     font-weight: 300;
     margin-top: 6px;
 }
+
+@media (max-width: 767px) {
+	.top__row {
+		height: 60px;
+	}
+
+	.users__list {
+		height: calc(100% - 110px);
+	}
+}
+
 </style>

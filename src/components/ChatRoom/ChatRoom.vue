@@ -1,5 +1,18 @@
 <template>
 	<div class="chat__top flex align-center">
+		<button class="btn back__btn" @click="closeChat">
+			<svg
+				xmlns="http://www.w3.org/2000/svg"
+				width="24"
+				height="24"
+				fill="currentColor"
+			>
+				<path fill="none" d="M0 0h24v24H0V0z" />
+				<path
+					d="M19 11H7.83l4.88-4.88c.39-.39.39-1.03 0-1.42a.996.996 0 0 0-1.41 0l-6.59 6.59a.996.996 0 0 0 0 1.41l6.59 6.59a.996.996 0 1 0 1.41-1.41L7.83 13H19c.55 0 1-.45 1-1s-.45-1-1-1z"
+				/>
+			</svg>
+		</button>
 		<div class="chat__avatar">
 			<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
 				<circle cx="16" cy="16" r="15" fill="#96d7ff" />
@@ -37,11 +50,14 @@
 				/>
 			</svg>
 		</div>
-        <h2 class="chat__name">
-            {{ receiverEmail }}
-        </h2>
+		<h2 class="chat__name">
+			{{ receiverEmail }}
+		</h2>
 		<div class="dropdown__outer" @click.stop>
-			<button class="btn options__btn flex-center" @click="toggleDropdown">
+			<button
+				class="btn options__btn flex-center"
+				@click="toggleDropdown"
+			>
 				<svg viewBox="0 0 24 24" width="24" height="24" class="">
 					<path
 						fill="currentColor"
@@ -50,10 +66,7 @@
 				</svg>
 			</button>
 			<div class="dropdown__box flex-col" v-if="isDropdownOpen">
-				<button
-					class="btn flex align-center"
-					@click="deleteChat"
-				>
+				<button class="btn flex align-center" @click="deleteChat">
 					Delete chat
 				</button>
 			</div>
@@ -71,7 +84,11 @@
 	</div>
 	<div class="chat__bottom">
 		<form class="flex align-center" @submit.prevent="sendMessage">
-			<input type="text" placeholder="Type a message" v-model="inputMessage" />
+			<input
+				type="text"
+				placeholder="Type a message"
+				v-model="inputMessage"
+			/>
 			<button type="submit" class="send__btn flex-center">
 				<svg viewBox="0 0 24 24" width="24" height="24" class="">
 					<path
@@ -85,15 +102,32 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, onMounted, onBeforeUnmount, ref, watch } from 'vue';
+import {
+	computed,
+	defineComponent,
+	onMounted,
+	onBeforeUnmount,
+	ref,
+	watch
+} from 'vue';
 import { useStore } from 'vuex';
 import { v4 } from 'uuid';
-import { getDatabase, ref as firebaseRef, set, onValue, off, remove } from 'firebase/database';
+import {
+	getDatabase,
+	ref as firebaseRef,
+	set,
+	onValue,
+	off,
+	remove,
+	push,
+	update,
+	child
+} from 'firebase/database';
 import Message from '@/components/ChatRoom/Message.vue';
 import useDropdown from '@/composables/useDropdown';
-import { getCurrentTime } from '@/helpers/getCurrentTime';
+import { getCurrentTime, toTimeString } from '@/helpers/dateHelpers';
 import { dbMessageType, uiMessageType } from '@/types/messageType';
-import notificationType from "@/types/notificationType";
+import notificationType from '@/types/notificationType';
 
 export default defineComponent({
 	components: {
@@ -101,98 +135,127 @@ export default defineComponent({
 	},
 	setup() {
 		const store = useStore();
-		const { isDropdownOpen, toggleDropdown, setIsOpenFalsy } = useDropdown();
+		const { isDropdownOpen, toggleDropdown, setIsOpenFalsy } =
+			useDropdown();
 		const messages = ref<uiMessageType[]>([]);
 		const inputMessage = ref<string>('');
 		const chatBody = ref<HTMLDivElement | null>(null);
+		const messageNumber = ref(0);
 
-		const userEmail = computed( () => store.state.user.user );
-		const receiverEmail = computed( () => store.state.user.chat );
+		const userEmail = computed(() => store.state.user.user);
+		const receiverEmail = computed(() => store.state.user.chat);
 
 		const database = getDatabase();
-		const chatRoomName = computed( () => {
-			if( !receiverEmail.value || !userEmail.value ) return "";
+		const chatRoomName = computed(() => {
+			if (!receiverEmail.value || !userEmail.value) return '';
 			const sender = userEmail.value.split('.')[0].split('@').join('');
-			const receiver = receiverEmail.value.split('.')[0].split('@').join('');
-			return "chats/" + [ sender, receiver ].sort().join('-');
+			const receiver = receiverEmail.value
+				.split('.')[0]
+				.split('@')
+				.join('');
+			return 'chats/' + [sender, receiver].sort().join('-');
 		});
 		let oldChatName = '';
 
 		function sendMessage() {
-			if( inputMessage.value === '' ) return;
+			if (inputMessage.value === '') return;
 
-			const messageRef = firebaseRef( database, chatRoomName.value + '/' + v4()  );
+			const messageRef = firebaseRef(
+				database,
+				chatRoomName.value + '/' + v4()
+			);
 			const message: dbMessageType = {
 				sender: userEmail.value,
 				receiver: receiverEmail.value,
 				text: inputMessage.value,
-				time: new Date().toISOString()
+				time: toTimeString(new Date()),
+				messageNumber: ++messageNumber.value,
+				isRead: false
 			};
-			set( messageRef, message );
+			set(messageRef, message);
 			inputMessage.value = '';
 		}
 
-		onMounted( () => {
-			const chatRef = firebaseRef( database, chatRoomName.value );
-			onValue( chatRef, listenValueChange );
+		onMounted(() => {
+			const chatRef = firebaseRef(database, chatRoomName.value);
+			onValue(chatRef, listenValueChange);
 		});
 
-		onBeforeUnmount( () => {
-			const chatRef = firebaseRef( database, oldChatName );
-			off( chatRef );
+		onBeforeUnmount(() => {
+			if( !oldChatName ) return;
+			const chatRef = firebaseRef(database, oldChatName);
+			off(chatRef);
 		});
 
-		watch( chatRoomName, ( newValue: string, oldValue: string ) => {
-
-			if( !newValue ) {
+		watch(chatRoomName, (newValue: string, oldValue: string) => {
+			if (!newValue) {
 				oldChatName = oldValue;
-				return
-			};
-			let chatRef = firebaseRef( database, oldValue );
-			off( chatRef );
-			chatRef = firebaseRef( database, newValue );
-			onValue( chatRef, listenValueChange );
+				return;
+			}
+			messages.value = [];
+			messageNumber.value = 0;
+			let chatRef = firebaseRef(database, oldValue);
+			off(chatRef);
+			chatRef = firebaseRef(database, newValue);
+			onValue(chatRef, listenValueChange);
 		});
 
-		function listenValueChange( snapshot ) {
-			if( snapshot.exists() ) {
+		function listenValueChange(snapshot) {
+			if (snapshot.exists()) {
 				const data = snapshot.val();
-				let result: dbMessageType[] = Object.values( data );
-				result = result.sort( (a: dbMessageType, b: dbMessageType) => {
-					const aDate = new Date( a.time );
-					const bDate = new Date( b.time );
-					if( aDate < bDate ) return -1;
-					else if( bDate < aDate ) return 1;
+				let result: dbMessageType[] = Object.values(data);
+				result = result.sort((a: dbMessageType, b: dbMessageType) => {
+					if (a.messageNumber < b.messageNumber) return -1;
+					else if (b.messageNumber < a.messageNumber) return 1;
 					else return 0;
 				});
-				messages.value = result.map( (message: dbMessageType) => {
+				messageNumber.value = result[result.length - 1].messageNumber;
+				messages.value = result.map((message: dbMessageType) => {
+					if( !message.isRead && message.sender !== userEmail.value ) {
+						const entries: [ string, dbMessageType ][] = Object.entries( data );
+						const entry = entries.find( entry => {
+							return entry[1].text === message.text && entry[1].time === message.time
+						});
+						if( entry ) {
+							const chatID = entry[0];
+							const messageRef = firebaseRef(database, chatRoomName.value + '/' + chatID );
+							update( messageRef,  { isRead: true } );
+						}
+					}
 					return {
 						isSender: message.sender === userEmail.value,
 						text: message.text,
-						time: getCurrentTime( new Date(message.time) )
-					}
+						time: getCurrentTime(new Date(message.time)),
+						isRead: message.isRead
+					};
 				});
-			}
-			else messages.value = [];
-			setTimeout( () => {
-				const lastMsg = chatBody.value!.querySelector('.message__row:last-child');
-				if( lastMsg ) lastMsg!.scrollIntoView();
+			} else messages.value = [];
+			setTimeout(() => {
+				const lastMsg = chatBody.value!.querySelector(
+					'.message__row:last-child'
+				);
+				if (lastMsg) lastMsg!.scrollIntoView();
 			}, 0);
 		}
 
 		function deleteChat() {
-			const chatRef = firebaseRef( database, chatRoomName.value );
-			off( chatRef );
-			remove( chatRef );
+			const chatRef = firebaseRef(database, chatRoomName.value);
+			off(chatRef);
+			remove(chatRef);
 			isDropdownOpen.value = false;
-			document.body.removeEventListener( 'click', setIsOpenFalsy );
+			document.body.removeEventListener('click', setIsOpenFalsy);
 			const notification: notificationType = {
 				type: 'success',
 				message: 'Chat deleted successfully.'
 			};
-			store.dispatch('notification/add', notification );
+			store.dispatch('notification/add', notification);
 			messages.value = [];
-			store.dispatch( 'user/setChat', null );
+			store.dispatch('user/setChat', null);
+		}
+
+		function closeChat() {
+			messages.value = [];
+			store.dispatch('user/setChat', null);
 		}
 
 		return {
@@ -203,7 +266,8 @@ export default defineComponent({
 			toggleDropdown,
 			sendMessage,
 			deleteChat,
-			chatBody
+			chatBody,
+			closeChat
 		};
 	}
 });
@@ -213,24 +277,33 @@ export default defineComponent({
 .chat__top {
 	height: 60px;
 	background-color: rgb(30, 36, 40);
-    padding: 0 20px;
-    position: relative;
-    z-index: 5;
+	padding: 0 20px;
+	position: relative;
+	z-index: 5;
+
+	.back__btn {
+		height: 30px;
+		margin-right: 12px;
+
+		@media (min-width: 768px) {
+			display: none;
+		}
+	}
 }
 
 .chat__avatar {
-    height: 40px;
-    width: 40px;
+	height: 40px;
+	width: 40px;
 }
 
 .chat__name {
-    font-size: rem(16);
-    font-weight: 500;
-    margin-left: 12px;
+	font-size: rem(16);
+	font-weight: 500;
+	margin-left: 12px;
 }
 
 .dropdown__outer {
-    margin-left: auto;
+	margin-left: auto;
 	position: relative;
 }
 
@@ -238,10 +311,11 @@ export default defineComponent({
 	position: absolute;
 	right: 15px;
 	width: 150px;
-    padding: 9px 0;
-    background-color: rgb(42, 47, 50);
-    border-radius: 3px;
-    box-shadow: rgba(0, 0, 0, 0.26) 0px 2px 5px 0px, rgba(0, 0, 0, 0.16) 0px 2px 10px 0px;
+	padding: 9px 0;
+	background-color: rgb(42, 47, 50);
+	border-radius: 3px;
+	box-shadow: rgba(0, 0, 0, 0.26) 0px 2px 5px 0px,
+		rgba(0, 0, 0, 0.16) 0px 2px 10px 0px;
 	transform-origin: top right;
 	animation: scale 0.2s linear;
 
@@ -264,7 +338,8 @@ export default defineComponent({
 
 	.chat__bg {
 		position: sticky;
-		top: 0; left: 0;
+		top: 0;
+		left: 0;
 		width: 100%;
 		height: 100%;
 		background-image: url('@/assets/images/tile background.png');
@@ -315,6 +390,29 @@ export default defineComponent({
 
 .send__btn {
 	margin-left: 15px;
-    height: 40px;
+	height: 40px;
 }
+
+@media (max-width: 767px) {
+	.chat__bottom {
+		form {
+			padding: 0 10px;
+			justify-content: space-between;
+		}
+
+		input {
+			padding: 0 15px;
+			flex-grow: 0;
+			width: calc(100% - 50px);
+		}
+
+		.send__btn {
+			margin-left: 0;
+			background-color: teal;
+			border-radius: 50%;
+			padding: 0 8px;
+		}
+	}
+}
+
 </style>

@@ -40,7 +40,7 @@ import { defineComponent, onMounted, computed, ref, onUnmounted } from 'vue';
 import { useStore } from 'vuex';
 import { dbMessageType } from '@/types/messageType';
 import chatType from '@/types/chatType';
-import { getCurrentTime } from '@/helpers/getCurrentTime';
+import { getCurrentTime } from '@/helpers/dateHelpers';
 import { getDatabase, ref as firebaseRef, onValue, off } from 'firebase/database';
 import SearchBox from '@/components/Sidepane/SearchBox.vue';
 import useSearch from '@/composables/useSearch';

@@ -417,7 +417,7 @@ export default defineComponent({
 
 	span {
 		font-size: rem(15);
-		line-height: 15px;
+		line-height: 1.8;
 		font-weight: 400;
 		color: #525252;
 	}
@@ -489,4 +489,67 @@ export default defineComponent({
 		aspect-ratio: 16/9;
 	}
 }
+
+@media (max-width: 767px) {
+	.login__window {
+		top: 0;
+	}
+
+	.login__header, .login__body {
+		height: auto;
+	}
+
+	.login__heading {
+		padding-left: 50px;
+		padding-right: 50px;
+	}
+
+	.window__top {
+		display: flex;
+		flex-direction: column;
+		padding: 30px 20px;
+		height: auto;
+
+		h2 {
+			font-size: rem(18);
+			margin-bottom: 30px;
+			text-align: center;
+		}
+
+		form {
+			flex-wrap: wrap;
+			justify-content: space-between;
+		}
+
+		.form__field {
+			width: 48%;
+
+			.form__input {
+				width: 100%;
+				margin-right: 0;
+			}
+		}
+
+		.form__field:last-child {
+			width: 100%;
+			margin-top: 5px;
+
+			.btn {
+				width: 100%;
+				height: 35px;
+			}
+		}
+	}
+
+	.qr__code {
+		margin-left: auto;
+		margin-right: auto;
+	}
+
+	.help__msg {
+		text-align: center;
+	}
+
+}
+
 </style>

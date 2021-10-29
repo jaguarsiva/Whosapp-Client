@@ -82,4 +82,21 @@ export default defineComponent({
     font-weight: 400;
 }
 
+@media (max-width: 1440px) {
+	.side__pane {
+		width: 30%;
+		min-width: 330px;
+	}
+}
+
+@media (max-width: 767px) {
+	.side__pane {
+		width: 100%;
+	}
+
+	.has__chat .side__pane {
+		display: none;
+	}
+}
+
 </style>

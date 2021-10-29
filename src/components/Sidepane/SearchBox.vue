@@ -51,7 +51,7 @@ export default defineComponent({
 		const searchInput = ref<string>( props.value );
 		watch( searchInput, debounce( (value: string) => {
 			context.emit('search-change', value);
-		}, 500));
+		}, 250));
 
 		watch( () => props.value, () => {
 			searchInput.value = props.value;
