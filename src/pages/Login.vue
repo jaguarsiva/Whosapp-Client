@@ -124,21 +124,8 @@
 					/>
 				</div>
 				<a href="#" class="help__msg">Need help to get started ?</a>
-				<div class="consent__msg flex-center">
-					<input type="checkbox" id="keepSignedIn" />
-					<label for="keepSignedIn">Keep me signed in</label>
-				</div>
 			</div>
 			<div class="window__bottom flex-center">
-				<!-- <div class="yt__box">
-					<iframe
-						src="https://www.youtube.com/embed/4uqQYcFfJ0M"
-						title="YouTube video player"
-						frameborder="0"
-						allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-						allowfullscreen
-					></iframe>
-				</div> -->
 			</div>
 		</div>
 	</section>
@@ -373,20 +360,6 @@ export default defineComponent({
 		width: 100%;
 		object-fit: cover;
 	}
-
-	&::before, &::after {
-		content: '';
-		position: absolute;
-	}
-
-	&::before {
-		background-color: rgba($color: $white, $alpha: 0.95);
-		z-index: 2;
-		top: 0;
-		left: 0;
-		right: 0;
-		bottom: 0;
-	}
 }
 
 .help__msg {
@@ -479,15 +452,6 @@ export default defineComponent({
 
 .window__bottom {
 	background-color: rgba(0, 0, 0, 0.05);
-
-	.yt__box {
-		max-width: 550px;
-	}
-
-	iframe {
-		width: 550px;
-		aspect-ratio: 16/9;
-	}
 }
 
 @media (max-width: 767px) {
