@@ -6,7 +6,7 @@ export default function( list ) {
     const searchKey = ref('');
     const searchResults = ref([]);
     const finalList = computed( () => {
-        if( searchResults.value.length ) return searchResults.value;
+        if( searchKey.value ) return searchResults.value;
         else return list.value;
     });
 

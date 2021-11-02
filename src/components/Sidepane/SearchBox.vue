@@ -6,6 +6,7 @@
 				class="search__input"
 				v-model="searchInput"
 				:placeholder="placeholder"
+				@input="handleChange"
 			/>
 			<button class="search__btn flex-center" tabindex="-1">
 				<svg viewBox="0 0 24 24" width="24" height="24" class="">
@@ -49,21 +50,22 @@ export default defineComponent({
 	},
 	setup(props, context) {
 		const searchInput = ref<string>( props.value );
-		watch( searchInput, debounce( (value: string) => {
-			context.emit('search-change', value);
-		}, 250));
+		const handleChange = debounce( (event: InputEvent) => {
+			const inputElement = event.target as HTMLInputElement;
+			context.emit('search-change', inputElement.value );
+		}, 250);
 
 		watch( () => props.value, () => {
 			searchInput.value = props.value;
 		});
 
 		return {
-			searchInput
+			searchInput,
+			handleChange
 		}
 	},
 })
 </script>
-
 
 <style lang="scss" scoped>
 .search__box {

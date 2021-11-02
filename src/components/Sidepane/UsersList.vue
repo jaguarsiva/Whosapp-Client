@@ -38,6 +38,9 @@
 					</button>
 				</li>
 			</ul>
+			<div class="no__users" v-if="finalList.length === 0">
+				<span>No users found.</span>
+			</div>
 		</div>
 	</aside>
 </template>
@@ -201,6 +204,12 @@ export default defineComponent({
 	.users__list {
 		height: calc(100% - 110px);
 	}
+}
+
+.no__users {
+	padding: 25px;
+	opacity: 0.6;
+	font-weight: 300;
 }
 
 </style>

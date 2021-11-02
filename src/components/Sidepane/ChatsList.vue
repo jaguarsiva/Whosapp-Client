@@ -32,6 +32,9 @@
                 No Chats Found..
             </li>
         </ul>
+        <div class="no__users" v-if="finalList.length === 0">
+            <span>No chats found.</span>
+        </div>
     </div>
 </template>
 
@@ -218,6 +221,12 @@ export default defineComponent({
     svg {
         margin-right: 4px;
     }
+}
+
+.no__users {
+	padding: 25px;
+	opacity: 0.6;
+	font-weight: 300;
 }
 
 </style>

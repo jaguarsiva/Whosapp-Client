@@ -123,7 +123,7 @@
 						alt="QR Code Whosapp"
 					/>
 				</div>
-				<a href="#" class="help__msg">Need help to get started ?</a>
+				<span class="help__msg">Need help to get started ?</span>
 			</div>
 			<div class="window__bottom flex-center">
 			</div>
