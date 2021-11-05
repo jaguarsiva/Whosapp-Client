@@ -28,9 +28,6 @@
                     </svg>
                 </button>
             </li>
-            <li v-if="chats.length === 0" class="no__chats flex align-center">
-                No Chats Found..
-            </li>
         </ul>
         <div class="no__users" v-if="finalList.length === 0">
             <span>No chats found.</span>
@@ -90,12 +87,12 @@ export default defineComponent({
                         };
                     });
                     chats.value = results.sort( (a: chatType, b: chatType) => {
-                        const aDate = new Date( a.lastMessageTime );
-                        const bDate = new Date( b.lastMessageTime );
-                        if( aDate < bDate ) return 1;
-                        else if( bDate < aDate ) return -1;
-                        else return 0;
-                    }).map( chat => ({
+                            const aDate = new Date( a.lastMessageTime );
+                            const bDate = new Date( b.lastMessageTime );
+                            if( aDate < bDate ) return 1;
+                            else if( bDate < aDate ) return -1;
+                            else return 0;
+                        }).map( chat => ({
                             ...chat,
                             lastMessageTime: getCurrentTime( new Date( chat.lastMessageTime ) )
                         })

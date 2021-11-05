@@ -135,8 +135,7 @@ export default defineComponent({
 	},
 	setup() {
 		const store = useStore();
-		const { isDropdownOpen, toggleDropdown, setIsOpenFalsy } =
-			useDropdown();
+		const { isDropdownOpen, toggleDropdown, setIsOpenFalsy } = useDropdown();
 		const messages = ref<uiMessageType[]>([]);
 		const inputMessage = ref<string>('');
 		const chatBody = ref<HTMLDivElement | null>(null);
@@ -200,8 +199,8 @@ export default defineComponent({
 			onValue(chatRef, listenValueChange);
 		});
 
-		function listenValueChange(snapshot) {
-			if (snapshot.exists()) {
+		function listenValueChange( snapshot ) {
+			if( snapshot.exists() ) {
 				const data = snapshot.val();
 				let result: dbMessageType[] = Object.values(data);
 				result = result.sort((a: dbMessageType, b: dbMessageType) => {
@@ -229,12 +228,12 @@ export default defineComponent({
 						isRead: message.isRead
 					};
 				});
-			} else messages.value = [];
+			}
+			else messages.value = [];
+
 			setTimeout(() => {
-				const lastMsg = chatBody.value!.querySelector(
-					'.message__row:last-child'
-				);
-				if (lastMsg) lastMsg!.scrollIntoView();
+				const lastMsg = chatBody.value!.querySelector( '.message__row:last-child' );
+				if( lastMsg ) lastMsg!.scrollIntoView();
 			}, 0);
 		}
 
