@@ -6,7 +6,7 @@ export function getCurrentTime(date: Date) {
 	hours = 12 < hours ? hours - 12 : hours;
 	const min = date.getMinutes();
 	const s = date.getSeconds();
-	return hours + ':' + min + ':' + s + ' ' + ampm;
+	return hours + ':' + min + ' ' + ampm;
 }
 
 export function toTimeString( date: Date ) {
