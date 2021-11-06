@@ -61,7 +61,7 @@ export default defineComponent({
 }
 
 .message__text {
-	padding: 6px 100px 8px 12px;
+	padding: 6px 85px 8px 12px;
 	position: relative;
 	font-size: rem(14);
 	line-height: 1.5;
