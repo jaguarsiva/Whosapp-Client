@@ -35,7 +35,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, watch } from 'vue'
-import { debounce } from '../../helpers/debounce.js';
+import { debounce } from '../../helpers/debounce';
 
 export default defineComponent({
 	props: {

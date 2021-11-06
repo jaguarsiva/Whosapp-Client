@@ -135,7 +135,7 @@
 import { defineComponent, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { useStore } from 'vuex';
-import { debounce } from '@/helpers/debounce.js';
+import { debounce } from '@/helpers/debounce';
 import { signupFirebase, loginFirebase } from '@/services/firebase.js';
 import notificationType from "@/types/notificationType";
 

@@ -10,12 +10,14 @@
 		"esModuleInterop": true,
 		"lib": ["esnext", "dom"],
 		"noImplicitAny": false,
+		"noImplicitThis": false,
 		"allowJs": true,
+		"noEmit": true,
         "baseUrl": "./src",
 		"paths": {
 			"@/*": ["./*"]
 		}
 	},
 	"include": [ "src/**/*.ts", "src/**/*.vue" ],
-	"exclude": [ "node_modules" ]
+	"exclude": [ "node_modules", "src/types/**.ts" ]
 }
