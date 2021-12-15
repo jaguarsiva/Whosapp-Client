@@ -13,7 +13,7 @@
 			<p class="not__title">Developer Information</p>
 			<p class="not__msg">
 				Made with 🤍 by
-				<a href="https://www.sivaa.tech/" title="Siva's Portfolio" target="_blank">
+				<a href="https://www.sivacodes.in/" title="Developer Portfolio website" target="_blank">
 					Siva
 				</a>
 			</p>
